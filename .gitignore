@@ -1,0 +1,19 @@
+# Credentials & tokens
+.env
+.spotify_cache
+
+# Fetched data
+spotify_data/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# IDE
+.idea/
+.venv_info
+
+# Claude Code
+.claude/
