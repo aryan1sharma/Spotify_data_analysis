@@ -2,8 +2,9 @@
 .env
 .spotify_cache
 
-# Fetched data
+# Fetched and analysed data
 spotify_data/
+analysed_data/
 
 # Python
 .venv/

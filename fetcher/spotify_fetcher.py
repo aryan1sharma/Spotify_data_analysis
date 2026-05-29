@@ -282,6 +282,7 @@ def build_parser() -> argparse.ArgumentParser:
         epilog="""
 Examples:
   python fetcher/spotify_fetcher.py --playlist 37i9dQZF1DXcBWIGoYBM5M
+  python fetcher/spotify_fetcher.py --playlist <id1> <id2> <id3>
   python fetcher/spotify_fetcher.py --playlist https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
   python fetcher/spotify_fetcher.py --playlist 37i9dQZF1DXcBWIGoYBM5M --market GB
   python fetcher/spotify_fetcher.py --playlist 37i9dQZF1DXcBWIGoYBM5M --format csv json parquet
@@ -289,12 +290,13 @@ Examples:
 """,
     )
     p.add_argument(
-        "--playlist", required=True,
+        "--playlist", required=True, nargs="+",
         metavar="ID_OR_URL",
         help=(
-            "Spotify playlist to fetch. Accepts a bare ID "
-            "(e.g. 37i9dQZF1DXcBWIGoYBM5M), a spotify:playlist: URI, "
-            "or a full open.spotify.com URL."
+            "One or more Spotify playlists to fetch, space-separated. "
+            "Each value accepts a bare ID (e.g. 37i9dQZF1DXcBWIGoYBM5M), "
+            "a spotify:playlist: URI, or a full open.spotify.com URL. "
+            "Each playlist is fetched and saved to its own separate file."
         ),
     )
     p.add_argument(
@@ -339,10 +341,9 @@ Examples:
 
 def main() -> None:
     args = build_parser().parse_args()
+    playlist_ids = [parse_playlist_id(raw) for raw in args.playlist]
 
-    playlist_id = parse_playlist_id(args.playlist)
-
-    # --- Authenticate ---
+    # --- Authenticate once, shared across all playlists ---
     print("Authenticating with Spotify...")
     sp = build_spotify_client(cache_path=args.cache_path)
 
@@ -351,38 +352,46 @@ def main() -> None:
 
     print(f"Signed in : {user.get('display_name')} ({user.get('email')})")
     print(f"Market    : {market or 'none (all markets)'}")
+    if len(playlist_ids) > 1:
+        print(f"Playlists : {len(playlist_ids)}")
 
-    # --- Playlist metadata ---
-    print("\nFetching playlist metadata...")
-    playlist_info = fetch_playlist_info(sp, playlist_id, market)
-    print(f"Playlist  : {playlist_info['playlist_name']}")
-    print(f"Owner     : {playlist_info['owner']}")
-    print(f"Tracks    : {playlist_info['total_tracks']}")
+    for i, playlist_id in enumerate(playlist_ids, 1):
+        if len(playlist_ids) > 1:
+            print(f"\n[{i}/{len(playlist_ids)}]")
 
-    # --- Tracks ---
-    print()
-    rows = fetch_all_tracks(sp, playlist_id, market)
+        # --- Playlist metadata ---
+        print("\nFetching playlist metadata...")
+        playlist_info = fetch_playlist_info(sp, playlist_id, market)
+        print(f"Playlist  : {playlist_info['playlist_name']}")
+        print(f"Owner     : {playlist_info['owner']}")
+        print(f"Tracks    : {playlist_info['total_tracks']}")
 
-    if not rows:
-        print("No playable tracks found.")
-        sys.exit(0)
+        # --- Tracks ---
+        print()
+        rows = fetch_all_tracks(sp, playlist_id, market)
 
-    df = pd.DataFrame(rows)
+        if not rows:
+            print("No playable tracks found.")
+            continue
 
-    # Coerce numeric columns for downstream analysis
-    df["duration_ms"]  = pd.to_numeric(df["duration_ms"],  errors="coerce").astype("Int64")
-    df["popularity"]   = pd.to_numeric(df["popularity"],   errors="coerce").astype("Int64")
-    df["track_number"] = pd.to_numeric(df["track_number"], errors="coerce").astype("Int64")
-    df["disc_number"]  = pd.to_numeric(df["disc_number"],  errors="coerce").astype("Int64")
-    df["added_at"]     = pd.to_datetime(df["added_at"], errors="coerce", utc=True)
+        df = pd.DataFrame(rows)
 
-    print_summary(df)
+        # Coerce numeric columns for downstream analysis
+        df["duration_ms"]  = pd.to_numeric(df["duration_ms"],  errors="coerce").astype("Int64")
+        df["popularity"]   = pd.to_numeric(df["popularity"],   errors="coerce").astype("Int64")
+        df["track_number"] = pd.to_numeric(df["track_number"], errors="coerce").astype("Int64")
+        df["disc_number"]  = pd.to_numeric(df["disc_number"],  errors="coerce").astype("Int64")
+        df["added_at"]     = pd.to_datetime(df["added_at"], errors="coerce", utc=True)
 
-    # --- Save ---
-    print("\nSaving data...")
-    saved = save_dataframe(df, playlist_info, args.output_dir, args.format)
+        print_summary(df)
 
-    print(f"\nDone — {len(df)} tracks saved to {len(saved)} file(s).")
+        # --- Save ---
+        print("\nSaving data...")
+        saved = save_dataframe(df, playlist_info, args.output_dir, args.format)
+        print(f"Done — {len(df)} tracks saved to {len(saved)} file(s).")
+
+    if len(playlist_ids) > 1:
+        print(f"\nAll done — {len(playlist_ids)} playlists processed.")
 
 
 if __name__ == "__main__":
