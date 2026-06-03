@@ -35,40 +35,40 @@ class TestDiscoverCsvs:
 
 class TestBuildFetcherCommand:
     def test_returns_none_when_no_playlist_ids(self):
-        assert logic.build_fetcher_command([], "IN", ["csv"]) is None
+        assert logic.build_fetcher_command([], "US", ["csv"]) is None
 
     def test_returns_none_when_playlist_ids_all_blank(self):
-        assert logic.build_fetcher_command(["", "  "], "IN", ["csv"]) is None
+        assert logic.build_fetcher_command(["", "  "], "US", ["csv"]) is None
 
     def test_single_playlist(self):
-        cmd = logic.build_fetcher_command(["abc123"], "IN", ["csv"])
+        cmd = logic.build_fetcher_command(["abc123"], "US", ["csv"])
         assert cmd is not None and "--playlist" in cmd and "abc123" in cmd
 
     def test_multiple_playlists(self):
-        cmd = logic.build_fetcher_command(["abc123", "def456"], "IN", ["csv"])
+        cmd = logic.build_fetcher_command(["abc123", "def456"], "US", ["csv"])
         rest = cmd[cmd.index("--playlist") + 1:]
         assert "abc123" in rest and "def456" in rest
 
     def test_uses_sys_executable(self):
-        assert logic.build_fetcher_command(["abc123"], "IN", ["csv"])[0] == sys.executable
+        assert logic.build_fetcher_command(["abc123"], "US", ["csv"])[0] == sys.executable
 
     def test_includes_unbuffered_flag(self):
-        assert "-u" in logic.build_fetcher_command(["abc123"], "IN", ["csv"])
+        assert "-u" in logic.build_fetcher_command(["abc123"], "US", ["csv"])
 
     def test_includes_market_when_provided(self):
-        cmd = logic.build_fetcher_command(["abc123"], "IN", ["csv"])
-        assert "--market" in cmd and "IN" in cmd
+        cmd = logic.build_fetcher_command(["abc123"], "US", ["csv"])
+        assert "--market" in cmd and "US" in cmd
 
     def test_omits_market_when_blank(self):
         assert "--market" not in logic.build_fetcher_command(["abc123"], "", ["csv"])
 
     def test_includes_format_flags(self):
-        cmd = logic.build_fetcher_command(["abc123"], "IN", ["csv", "json"])
+        cmd = logic.build_fetcher_command(["abc123"], "US", ["csv", "json"])
         rest = cmd[cmd.index("--format") + 1:]
         assert "csv" in rest and "json" in rest
 
     def test_strips_blank_playlist_ids(self):
-        cmd = logic.build_fetcher_command(["abc123", "  ", "def456"], "IN", ["csv"])
+        cmd = logic.build_fetcher_command(["abc123", "  ", "def456"], "US", ["csv"])
         assert "  " not in cmd and "" not in cmd
 
 

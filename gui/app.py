@@ -185,7 +185,7 @@ class FetcherTab(ttk.Frame):
         lf_opts = ttk.LabelFrame(self, text="Options")
         lf_opts.pack(fill="x", **pad)
         ttk.Label(lf_opts, text="Market:").grid(row=0, column=0, sticky="w", padx=4, pady=4)
-        self._market_var = tk.StringVar(value="IN")
+        self._market_var = tk.StringVar(value="US")
         ttk.Entry(lf_opts, textvariable=self._market_var, width=6).grid(row=0, column=1, sticky="w", padx=4, pady=4)
         ttk.Label(lf_opts, text="Format:").grid(row=0, column=2, sticky="w", padx=12, pady=4)
         self._fmt_csv  = tk.BooleanVar(value=True)

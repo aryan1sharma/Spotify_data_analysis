@@ -70,14 +70,14 @@ class TestExtractTrack:
         return base
 
     def test_returns_dict_for_valid_item(self):
-        row = sf._extract_track(self._item(), "IN")
+        row = sf._extract_track(self._item(), "US")
         assert row is not None
         assert row["track_id"] == "tid001"
         assert row["track_name"] == "Test Track"
         assert row["duration"] == "3:39"
         assert row["isrc"] == "TEST123"
         assert row["added_by"] == "user123"
-        assert row["market"] == "IN"
+        assert row["market"] == "US"
 
     def test_multi_artist_comma_joined(self):
         item = self._item()
@@ -85,22 +85,22 @@ class TestExtractTrack:
             {"id": "a1", "name": "Artist A"},
             {"id": "a2", "name": "Artist B"},
         ]
-        row = sf._extract_track(item, "IN")
+        row = sf._extract_track(item, "US")
         assert row["artists"] == "Artist A, Artist B"
         assert row["artist_ids"] == "a1, a2"
 
     def test_skips_podcast_episode(self):
         item = self._item()
         item["item"]["type"] = "episode"
-        assert sf._extract_track(item, "IN") is None
+        assert sf._extract_track(item, "US") is None
 
     def test_skips_null_item(self):
-        assert sf._extract_track({"added_at": "x", "added_by": {"id": "u"}}, "IN") is None
+        assert sf._extract_track({"added_at": "x", "added_by": {"id": "u"}}, "US") is None
 
     def test_no_images_sets_none(self):
         item = self._item()
         item["item"]["album"]["images"] = []
-        row = sf._extract_track(item, "IN")
+        row = sf._extract_track(item, "US")
         assert row["album_cover_url"] is None
 
     def test_uses_deprecated_track_key_as_fallback(self):
@@ -108,7 +108,7 @@ class TestExtractTrack:
         item = self._item()
         track = item.pop("item")
         item["track"] = track
-        row = sf._extract_track(item, "IN")
+        row = sf._extract_track(item, "US")
         assert row is not None
         assert row["track_id"] == "tid001"
 
@@ -118,7 +118,7 @@ class TestExtractTrack:
             {"id": None, "name": "Local Artist"},
             {"id": "a2", "name": "Real Artist"},
         ]
-        row = sf._extract_track(item, "IN")
+        row = sf._extract_track(item, "US")
         assert "Local Artist" in row["artists"]
         assert "a2" in row["artist_ids"]
         assert "None" not in row["artist_ids"]
@@ -146,7 +146,7 @@ class TestFetchPlaylistInfo:
 
     def test_returns_expected_keys(self):
         sp = self._mock_sp()
-        info = sf.fetch_playlist_info(sp, "pl001", "IN")
+        info = sf.fetch_playlist_info(sp, "pl001", "US")
         assert info["playlist_id"] == "pl001"
         assert info["playlist_name"] == "My Playlist"
         assert info["owner"] == "Test User"
@@ -158,12 +158,12 @@ class TestFetchPlaylistInfo:
     def test_no_images_sets_none(self):
         sp = self._mock_sp()
         sp.playlist.return_value["images"] = []
-        info = sf.fetch_playlist_info(sp, "pl001", "IN")
+        info = sf.fetch_playlist_info(sp, "pl001", "US")
         assert info["cover_image"] is None
 
     def test_calls_correct_playlist_id(self):
         sp = self._mock_sp()
-        sf.fetch_playlist_info(sp, "pl001", "IN")
+        sf.fetch_playlist_info(sp, "pl001", "US")
         sp.playlist.assert_called_once()
         call_args = sp.playlist.call_args
         assert call_args[0][0] == "pl001"
@@ -206,7 +206,7 @@ class TestFetchAllTracks:
             "total": 2,
             "next": None,
         }
-        rows = sf.fetch_all_tracks(sp, "pl001", "IN")
+        rows = sf.fetch_all_tracks(sp, "pl001", "US")
         assert len(rows) == 2
         assert rows[0]["track_id"] == "t1"
         assert rows[1]["track_id"] == "t2"
@@ -224,7 +224,7 @@ class TestFetchAllTracks:
             "next": None,
         }
         sp.playlist_items.side_effect = [page1, page2]
-        rows = sf.fetch_all_tracks(sp, "pl001", "IN")
+        rows = sf.fetch_all_tracks(sp, "pl001", "US")
         assert len(rows) == 150
         assert sp.playlist_items.call_count == 2
 
@@ -236,7 +236,7 @@ class TestFetchAllTracks:
             "total": 2,
             "next": None,
         }
-        rows = sf.fetch_all_tracks(sp, "pl001", "IN")
+        rows = sf.fetch_all_tracks(sp, "pl001", "US")
         assert len(rows) == 1
         assert rows[0]["track_id"] == "t1"
 
@@ -252,7 +252,7 @@ class TestFetchAllTracks:
             "total": 1,
             "next": None,
         }
-        rows = sf.fetch_all_tracks(sp, "pl001", "IN")
+        rows = sf.fetch_all_tracks(sp, "pl001", "US")
         assert len(rows) == 0
 
 
@@ -356,7 +356,7 @@ _MINIMAL_TRACK = {
     "duration_ms": 180000, "duration": "3:00",
     "explicit": False, "popularity": 50,
     "track_number": 1, "disc_number": 1,
-    "market": "IN", "added_at": "2024-01-01T00:00:00Z", "added_by": "user1",
+    "market": "US", "added_at": "2024-01-01T00:00:00Z", "added_by": "user1",
 }
 
 def _playlist_info(pid: str, name: str) -> dict:
@@ -370,7 +370,7 @@ def _playlist_info(pid: str, name: str) -> dict:
 def _mock_sp() -> MagicMock:
     sp = MagicMock()
     sp.current_user.return_value = {
-        "display_name": "Test User", "email": "t@test.com", "country": "IN",
+        "display_name": "Test User", "email": "t@test.com", "country": "US",
     }
     return sp
 
